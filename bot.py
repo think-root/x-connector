@@ -5,17 +5,18 @@ from fastapi import FastAPI, Body, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from fastapi.responses import Response
+import json
+
 load_dotenv()
-
-app = FastAPI()
-
 USERNAME = os.getenv("TWITTER_USERNAME")
 EMAIL = os.getenv("TWITTER_EMAIL")
 PASSWORD = os.getenv("TWITTER_PASSWORD")
 API_KEY = os.getenv("API_KEY", "ABC")
+PORT = int(os.getenv("PORT", 9007))
 
+app = FastAPI()
 client = Client("uk-UA")
-
 
 class APIKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -78,10 +79,8 @@ async def create_post(
     
     return {"status": "success"}
 
-
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9007)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
 
-from fastapi.responses import Response
-import json
+
