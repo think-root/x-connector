@@ -36,8 +36,11 @@ class TweetRequest(BaseModel):
     text: str
 
 
-@app.on_event("startup")
-async def startup_event():
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Load or create cookies
     if os.path.exists("cookies.json"):
         client.load_cookies("cookies.json")
     else:
@@ -45,8 +48,10 @@ async def startup_event():
             auth_info_1=USERNAME, auth_info_2=EMAIL, password=PASSWORD, cookies_file="cookies.json"
         )
         await client.save_cookies("cookies.json")
+    yield
+    # Shutdown: Add any cleanup here if needed
 
-
+app = FastAPI(lifespan=lifespan)
 from fastapi import File, UploadFile
 from typing import List
 import tempfile
