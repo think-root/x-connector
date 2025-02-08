@@ -1,91 +1,124 @@
-import asyncio
+import time
+import hmac
+import hashlib
+import base64
+import requests
+import logging
 import os
-from twikit import Client
-from fastapi import FastAPI, Body, HTTPException, Request
-from starlette.middleware.base import BaseHTTPMiddleware
-from pydantic import BaseModel
+import uvicorn
+
 from dotenv import load_dotenv
-from fastapi.responses import Response
-import json
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
+from fastapi.responses import JSONResponse
+from requests_oauthlib import OAuth1
+from typing import Optional
+from datetime import datetime
 
-load_dotenv()
-USERNAME = os.getenv("TWITTER_USERNAME")
-EMAIL = os.getenv("TWITTER_EMAIL")
-PASSWORD = os.getenv("TWITTER_PASSWORD")
-API_KEY = os.getenv("API_KEY", "ABC")
-PORT = int(os.getenv("PORT", 9007))
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
-app = FastAPI()
-client = Client("uk-UA")
+logger = logging.getLogger(__name__)
+
 
 class APIKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         api_key = request.headers.get("X-API-Key")
-        if not api_key or api_key != API_KEY:
-            return Response(
-                status_code=403,
-                content=json.dumps({"detail": "Invalid API key"}),
-                media_type="application/json"
-            )
-        return await call_next(request)
 
+        if not api_key:
+            return JSONResponse(status_code=401, content={"error": "API Key missing"})
+
+        if api_key != os.getenv("SERVER_API_KEY"):
+            return JSONResponse(status_code=403, content={"error": "Invalid API Key"})
+
+        response = await call_next(request)
+        return response
+
+
+app = FastAPI()
 app.add_middleware(APIKeyMiddleware)
 
+load_dotenv()
 
-class TweetRequest(BaseModel):
-    text: str
+consumer_key = os.getenv("CONSUMER_KEY")
+consumer_secret = os.getenv("CONSUMER_SECRET")
+access_token = os.getenv("ACCESS_TOKEN")
+access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
 
 
-from contextlib import asynccontextmanager
+async def post_tweet_with_media(text: str, url: Optional[str] = None, image_data: bytes = None):
+    auth = OAuth1(consumer_key, consumer_secret, access_token, access_token_secret)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: Load or create cookies
-    if os.path.exists("cookies.json"):
-        client.load_cookies("cookies.json")
+    if image_data:
+        logger.info("Uploading media to Twitter")
+        media_url = "https://upload.twitter.com/1.1/media/upload.json"
+        files = {"media": image_data}
+        media_response = requests.post(media_url, files=files, auth=auth)
+        media_id = media_response.json()["media_id_string"]
+        logger.info(f"Media uploaded successfully with ID: {media_id}")
+
+        tweet_url = "https://api.twitter.com/2/tweets"
+        data = {"text": text, "media": {"media_ids": [media_id]}}
     else:
-        await client.login(
-            auth_info_1=USERNAME, auth_info_2=EMAIL, password=PASSWORD, cookies_file="cookies.json"
+        tweet_url = "https://api.twitter.com/2/tweets"
+        data = {"text": text}
+
+    try:
+        logger.info(f"Posting main tweet: {text[:50]}...")
+        response = requests.post(
+            tweet_url, json=data, auth=auth, headers={"Content-Type": "application/json"}
         )
-        await client.save_cookies("cookies.json")
-    yield
-    # Shutdown: Add any cleanup here if needed
+        response.raise_for_status()
+        main_tweet = response.json()
+        logger.info("Main tweet posted successfully")
 
-app = FastAPI(lifespan=lifespan)
-from fastapi import File, UploadFile
-from typing import List
-import tempfile
+        if url:
+            reply_data = {
+                "text": url,
+                "reply": {"in_reply_to_tweet_id": main_tweet["data"]["id"]}
+            }
+            logger.info(f"Posting URL as reply: {url}")
+            reply_response = requests.post(
+                tweet_url, json=reply_data, auth=auth, headers={"Content-Type": "application/json"}
+            )
+            reply_response.raise_for_status()
+            logger.info("Reply with URL posted successfully")
+            return {"main_tweet": main_tweet, "reply_tweet": reply_response.json()}
 
-class TweetRequest(BaseModel):
-    text: str
+        return main_tweet
+    except requests.exceptions.RequestException as error:
+        logger.error(f"Error posting tweet: {error}")
+        return {"error": str(error)}
 
-@app.post("/x/posts/create")
+
+@app.post("/x/api/posts/create")
 async def create_post(
-    text: str = Body(...),
-    files: List[UploadFile] = File(...)
+    text: str = Form(...),
+    url: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
 ):
-    media_ids = []
-    
-    for file in files:
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_file.flush()
-            
-            media_id = await client.upload_media(temp_file.name)
-            media_ids.append(media_id)
-            
-            os.unlink(temp_file.name)
+    request_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"Received post request at {request_time}")
+    logger.info(f"Text content: {text[:50]}...")
+    if url:
+        logger.info(f"URL included: {url}")
 
-    await client.create_tweet(
-        text=text,
-        media_ids=media_ids
-    )
-    
-    return {"status": "success"}
+    if image:
+        logger.info(f"Image included in request: {image.filename}")
+        image_data = await image.read()
+        result = await post_tweet_with_media(text, url, image_data)
+    else:
+        logger.info("No image in request")
+        result = await post_tweet_with_media(text, url)
+
+    logger.info(f"Request completed with result: {result}")
+    return result
+
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
-
-
+    logger.info("Starting X API server...")
+    port = int(os.getenv("SERVER_PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
