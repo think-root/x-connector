@@ -24,8 +24,8 @@ This project provides a FastAPI-based server that integrates with the Twitter AP
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/yourusername/twitter-api-fastapi.git
-   cd twitter-api-fastapi
+   git clone https://github.com/Think-Root/x.git
+   cd x
    ```
 
 2. **Install dependencies:**
