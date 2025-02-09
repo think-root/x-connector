@@ -31,13 +31,6 @@ This project provides a FastAPI-based server that integrates with the Twitter AP
 2. **Install dependencies:**
 
    ```bash
-   pip install fastapi uvicorn requests requests-oauthlib python-dotenv
-   ```
-
-   or
-
-
-   ```bash
    pip install -r requirements.txt
    ```
 
