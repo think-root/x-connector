@@ -2,6 +2,8 @@ services:
   x_api:
     container_name: x_api
     restart: always
+    ports:
+      - "127.0.0.1:${SERVER_PORT}:${SERVER_PORT}"
     image: x_api:latest
     build:
       context: .
