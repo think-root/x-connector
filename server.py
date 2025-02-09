@@ -7,6 +7,7 @@ import logging
 import os
 import uvicorn
 
+from tenacity import retry, stop_after_attempt, wait_exponential
 from dotenv import load_dotenv
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
@@ -150,9 +151,6 @@ if __name__ == "__main__":
     logger.info("Starting X API server...")
     port = int(os.getenv("SERVER_PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 
 @retry(
     stop=stop_after_attempt(5),
