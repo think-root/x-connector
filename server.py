@@ -7,7 +7,7 @@ import logging
 import os
 import uvicorn
 
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import stop_after_attempt, wait_exponential
 from dotenv import load_dotenv
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import FastAPI, File, UploadFile, Form, Request, HTTPException
@@ -15,6 +15,13 @@ from fastapi.responses import JSONResponse
 from requests_oauthlib import OAuth1
 from typing import Optional
 from datetime import datetime
+
+load_dotenv()
+
+consumer_key = os.getenv("CONSUMER_KEY")
+consumer_secret = os.getenv("CONSUMER_SECRET")
+access_token = os.getenv("ACCESS_TOKEN")
+access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,21 +49,16 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 app = FastAPI()
 app.add_middleware(APIKeyMiddleware)
 
-load_dotenv()
 
-consumer_key = os.getenv("CONSUMER_KEY")
-consumer_secret = os.getenv("CONSUMER_SECRET")
-access_token = os.getenv("ACCESS_TOKEN")
-access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
-
-@retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-)
 async def make_twitter_request(url, data, auth, headers):
-    response = requests.post(url, json=data, auth=auth, headers=headers)
-    response.raise_for_status()
-    return response
+    try:
+        response = requests.post(url, json=data, auth=auth, headers=headers)
+        response.raise_for_status()
+        return response
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"Twitter API error: {e.response.text}")
+        raise
+
 
 async def post_tweet_with_media(text: str, url: Optional[str] = None, image_data: bytes = None):
     DELAY_BETWEEN_REQUESTS = 5
