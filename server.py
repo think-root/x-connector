@@ -49,6 +49,14 @@ consumer_secret = os.getenv("CONSUMER_SECRET")
 access_token = os.getenv("ACCESS_TOKEN")
 access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
 
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
+async def make_twitter_request(url, data, auth, headers):
+    response = requests.post(url, json=data, auth=auth, headers=headers)
+    response.raise_for_status()
+    return response
 
 async def post_tweet_with_media(text: str, url: Optional[str] = None, image_data: bytes = None):
     DELAY_BETWEEN_REQUESTS = 5
@@ -151,12 +159,3 @@ if __name__ == "__main__":
     logger.info("Starting X API server...")
     port = int(os.getenv("SERVER_PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-@retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-)
-async def make_twitter_request(url, data, auth, headers):
-    response = requests.post(url, json=data, auth=auth, headers=headers)
-    response.raise_for_status()
-    return response
