@@ -61,39 +61,34 @@ async def make_twitter_request(url, data, auth, headers):
 
 
 async def post_tweet_with_media(text: str, url: Optional[str] = None, image_data: bytes = None):
+    MAX_LENGTH = 270
     DELAY_BETWEEN_REQUESTS = 5
-    MAX_LENGTH = 280
-    text_parts = []
-
     auth = OAuth1(consumer_key, consumer_secret, access_token, access_token_secret)
-    tweet_url = "https://api.twitter.com/2/tweets"
+    tweet_url = "https://api.x.com/2/tweets"
+    tweets_data = []
 
-    if len(text) > MAX_LENGTH:
-        total_parts = (len(text) + MAX_LENGTH - 1) // MAX_LENGTH
-        counter_format = lambda x: f"{x}/{total_parts} 🧵 "
-        counter_length = len(counter_format(total_parts))
-        chunk_size = MAX_LENGTH - counter_length
+    def split_text_into_two(text: str) -> list[str]:
+        if len(text) <= MAX_LENGTH:
+            return [text]
+        mid = len(text) // 2
+        split_index = text.rfind(" ", 0, mid)
+        if split_index == -1:
+            split_index = mid
+        part1 = text[:split_index].strip()
+        part2 = text[split_index:].strip()
+        return [part1, part2]
 
-        for i in range(0, len(text), chunk_size):
-            part = text[i : i + chunk_size]
-            text_parts.append(
-                f"{len(text_parts) + 1}/{(len(text) + chunk_size - 1) // chunk_size} 🧵 {part}"
-            )
-    else:
-        text_parts = [text]
+    text_parts = split_text_into_two(text)
 
     try:
-        previous_tweet_id = None
-        tweets_data = []
-
         if image_data:
             logger.info("Uploading media to Twitter")
             media_url = "https://upload.twitter.com/1.1/media/upload.json"
             files = {"media": image_data}
             media_response = requests.post(media_url, files=files, auth=auth)
+            media_response.raise_for_status()
             media_id = media_response.json()["media_id_string"]
             logger.info(f"Media uploaded successfully with ID: {media_id}")
-
             data = {"text": text_parts[0], "media": {"media_ids": [media_id]}}
         else:
             data = {"text": text_parts[0]}
@@ -106,19 +101,19 @@ async def post_tweet_with_media(text: str, url: Optional[str] = None, image_data
         previous_tweet_id = response.json()["data"]["id"]
         tweets_data.append(response.json())
 
-        for part in text_parts[1:]:
-            time.sleep(DELAY_BETWEEN_REQUESTS)
-            reply_data = {"text": part, "reply": {"in_reply_to_tweet_id": previous_tweet_id}}
-            logger.info(f"Posting thread part: {part[:50]}...")
+        if len(text_parts) > 1:
+            asyncio.sleep(DELAY_BETWEEN_REQUESTS)
+            reply_data = {"text": text_parts[1], "reply": {"in_reply_to_tweet_id": previous_tweet_id}}
+            logger.info(f"Posting second tweet: {text_parts[1][:50]}...")
             reply_response = requests.post(
                 tweet_url, json=reply_data, auth=auth, headers={"Content-Type": "application/json"}
             )
             reply_response.raise_for_status()
-            previous_tweet_id = reply_response.json()["data"]["id"]
             tweets_data.append(reply_response.json())
+            previous_tweet_id = reply_response.json()["data"]["id"]
 
         if url:
-            time.sleep(DELAY_BETWEEN_REQUESTS)
+            asyncio.sleep(DELAY_BETWEEN_REQUESTS)
             reply_data = {"text": url, "reply": {"in_reply_to_tweet_id": previous_tweet_id}}
             logger.info(f"Posting URL as final reply: {url}")
             reply_response = requests.post(
@@ -131,7 +126,6 @@ async def post_tweet_with_media(text: str, url: Optional[str] = None, image_data
     except requests.exceptions.RequestException as error:
         logger.error(f"Error posting tweet: {error}")
         return {"error": str(error)}
-
 
 @app.post("/x/api/posts/create")
 async def create_post(
@@ -154,6 +148,17 @@ async def create_post(
         result = await post_tweet_with_media(text, url)
 
     logger.info(f"Request completed with result: {result}")
+    return result
+
+
+@app.post("/x/api/test/posts/create")
+async def create_test_post():
+    logger.info("Received test post request")
+    test_text = "test"
+
+    result = await post_tweet_with_media(test_text)
+
+    logger.info(f"Test request completed with result: {result}")
     return result
 
 
