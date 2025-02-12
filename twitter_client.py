@@ -27,21 +27,43 @@ class TwitterClient:
     def split_text_into_two(self, text: str) -> List[str]:
         if len(text) <= TWITTER_API["MAX_TWEET_LENGTH"]:
             return [text]
-        mid = len(text) // 2
-        split_index = text.rfind(" ", 0, mid)
-        if split_index == -1:
-            split_index = mid
-        part1 = text[:split_index].strip()
-        part2 = text[split_index:].strip()
-        return [part1, part2]
+
+        total_length = len(text)
+        target_length = total_length // 2
+
+        max_part_length = TWITTER_API["MAX_TWEET_LENGTH"] - 6
+        target_length = min(target_length, max_part_length)
+
+        parts = []
+        remaining_text = text
+
+        while remaining_text:
+            if len(remaining_text) <= max_part_length:
+                parts.append(remaining_text)
+                break
+
+            split_index = remaining_text.rfind(" ", target_length - 20, target_length + 20)
+            if split_index == -1:
+                split_index = target_length
+
+            parts.append(remaining_text[:split_index].strip())
+            remaining_text = remaining_text[split_index:].strip()
+
+        return parts
 
     async def post_tweet_with_media(
         self, text: str, url: Optional[str] = None, image_data: bytes = None
     ):
         tweets_data = []
         text_parts = self.split_text_into_two(text)
+        total_parts = len(text_parts)
+        previous_tweet_id = None
 
         try:
+            first_text = text_parts[0]
+            if total_parts > 1:
+                first_text = f"🧵 1/{total_parts} {first_text}"
+
             if image_data:
                 logger.info("Uploading media to Twitter")
                 files = {"media": image_data}
@@ -51,24 +73,25 @@ class TwitterClient:
                 media_response.raise_for_status()
                 media_id = media_response.json()["media_id_string"]
                 logger.info(f"Media uploaded successfully with ID: {media_id}")
-                data = {"text": text_parts[0], "media": {"media_ids": [media_id]}}
+                data = {"text": first_text, "media": {"media_ids": [media_id]}}
             else:
-                data = {"text": text_parts[0]}
+                data = {"text": first_text}
 
-            logger.info(f"Posting first tweet: {text_parts[0][:50]}...")
+            logger.info(f"Posting first tweet: {first_text[:50]}...")
             response = await self.make_twitter_request(
                 TWITTER_API["TWEET_URL"], data, {"Content-Type": "application/json"}
             )
             previous_tweet_id = response.json()["data"]["id"]
             tweets_data.append(response.json())
 
-            if len(text_parts) > 1:
+            for i, part in enumerate(text_parts[1:], 2):
                 await asyncio.sleep(TWITTER_API["DELAY_BETWEEN_REQUESTS"])
+                text_with_counter = f"🧵 {i}/{total_parts} {part}"
                 reply_data = {
-                    "text": text_parts[1],
+                    "text": text_with_counter,
                     "reply": {"in_reply_to_tweet_id": previous_tweet_id},
                 }
-                logger.info(f"Posting second tweet: {text_parts[1][:50]}...")
+                logger.info(f"Posting part {i}: {text_with_counter[:50]}...")
                 reply_response = await self.make_twitter_request(
                     TWITTER_API["TWEET_URL"], reply_data, {"Content-Type": "application/json"}
                 )
