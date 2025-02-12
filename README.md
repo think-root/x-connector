@@ -1,6 +1,11 @@
 # x
 
-This project provides a FastAPI-based server that integrates with the Twitter API to post tweets with optional media and URLs. It includes API key middleware for secure access and uses OAuth1 for authentication with the Twitter API.
+This repository is part of the [chappie_bot](https://github.com/Think-Root/chappie_bot) repository. If you want the bot to have Twitter integration and posts to be automatically published there as well, you need to deploy this app.  
+
+
+## Desscription
+
+This app provides a FastAPI-based server that integrates with the Twitter API to post tweets with optional media and URLs. It includes API key middleware for secure access and uses OAuth1 for authentication with the Twitter API.
 
 ## Features
 
