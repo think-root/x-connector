@@ -1,21 +1,15 @@
 import requests
 from requests_oauthlib import OAuth1
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from config import TWITTER_AUTH
 
 auth = OAuth1(
-    os.getenv("CONSUMER_KEY"),
-    os.getenv("CONSUMER_SECRET"), 
-    os.getenv("ACCESS_TOKEN"),
-    os.getenv("ACCESS_TOKEN_SECRET")
+    TWITTER_AUTH["CONSUMER_KEY"],
+    TWITTER_AUTH["CONSUMER_SECRET"],
+    TWITTER_AUTH["ACCESS_TOKEN"],
+    TWITTER_AUTH["ACCESS_TOKEN_SECRET"],
 )
 
-response = requests.get(
-    "https://api.twitter.com/2/users/me",
-    auth=auth
-)
+response = requests.get("https://api.twitter.com/2/users/me", auth=auth)
 
 print(f"Status: {response.status_code}")
 print(f"Response: {response.json()}")
