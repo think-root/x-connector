@@ -12,3 +12,9 @@ services:
       TZ: Europe/Kiev
     env_file:
       - .env
+    networks:
+      - chappie_network
+
+networks:
+  chappie_network:
+    external: true 
