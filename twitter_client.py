@@ -4,6 +4,7 @@ from requests_oauthlib import OAuth1
 from typing import Optional, List
 from config import TWITTER_AUTH, TWITTER_API
 from logger import logger
+import math
 
 
 class TwitterClient:
@@ -25,30 +26,25 @@ class TwitterClient:
             raise
 
     def split_text_into_two(self, text: str) -> List[str]:
-        if len(text) <= TWITTER_API["MAX_TWEET_LENGTH"]:
+        max_length = 250
+        if len(text) <= max_length:
             return [text]
-
-        total_length = len(text)
-        target_length = total_length // 2
-
-        max_part_length = TWITTER_API["MAX_TWEET_LENGTH"] - 6
-        target_length = min(target_length, max_part_length)
-
+        total_parts = math.ceil(len(text) / max_length)
+        target_length = math.ceil(len(text) / total_parts)
         parts = []
-        remaining_text = text
-
-        while remaining_text:
-            if len(remaining_text) <= max_part_length:
-                parts.append(remaining_text)
+        while text:
+            if len(text) <= max_length:
+                parts.append(text)
                 break
-
-            split_index = remaining_text.rfind(" ", target_length - 20, target_length + 20)
+            start = max(target_length - 20, 0)
+            end = min(target_length + 20, len(text))
+            split_index = text.rfind(" ", start, end)
             if split_index == -1:
-                split_index = target_length
-
-            parts.append(remaining_text[:split_index].strip())
-            remaining_text = remaining_text[split_index:].strip()
-
+                split_index = text.rfind(" ", 0, max_length)
+                if split_index == -1:
+                    split_index = max_length
+            parts.append(text[:split_index].strip())
+            text = text[split_index:].strip()
         return parts
 
     async def post_tweet_with_media(
