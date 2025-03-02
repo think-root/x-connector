@@ -1,6 +1,6 @@
 # x
 
-This repository is part of the [chappie_bot](https://github.com/Think-Root/chappie_bot) repository. If you want the bot to have Twitter integration and posts to be automatically published there as well, you need to deploy this app.  
+This repository is part of the [content-alchemist](https://github.com/think-root/content-alchemist) repository. If you want the bot to have Twitter integration and posts to be automatically published there as well, you need to deploy this app. 
 
 
 ## Description
@@ -29,7 +29,7 @@ This app provides a FastAPI-based server that integrates with the Twitter API to
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/Think-Root/x.git
+   git clone https://github.com/think-root/x-connector.git
    cd x
    ```
 
