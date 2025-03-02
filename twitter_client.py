@@ -25,7 +25,7 @@ class TwitterClient:
             logger.error(f"Twitter API error: {e.response.text}")
             raise
 
-    def split_text_into_two(self, text: str) -> List[str]:
+    def split_text_into_parts(self, text: str) -> List[str]:
         max_length = 250
         if len(text) <= max_length:
             return [text]
@@ -51,7 +51,7 @@ class TwitterClient:
         self, text: str, url: Optional[str] = None, image_data: bytes = None
     ):
         tweets_data = []
-        text_parts = self.split_text_into_two(text)
+        text_parts = self.split_text_into_parts(text)
         total_parts = len(text_parts)
         previous_tweet_id = None
 
