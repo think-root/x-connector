@@ -13,8 +13,8 @@ services:
     env_file:
       - .env
     networks:
-      - chappie_network
+      - think-root-network
 
 networks:
-  chappie_network:
+  think-root-network:
     external: true 
