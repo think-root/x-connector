@@ -1,4 +1,4 @@
-name: CI/CD x_api
+name: CI/CD x-connector
 
 on:
   push:
@@ -86,9 +86,9 @@ jobs:
             echo "Setting up .env file..."
             echo "${{ secrets.ENV_PROD }}" > .env
 
-            if docker inspect x_api >/dev/null 2>&1; then
+            if docker inspect x-connector >/dev/null 2>&1; then
               echo "Stopping and removing existing container..."
-              docker rm -f x_api
+              docker rm -f x-connector
             fi
 
             echo "Starting app via Docker Compose..."
