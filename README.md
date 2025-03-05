@@ -1,11 +1,18 @@
 # x
 
-This repository is part of the [content-alchemist](https://github.com/think-root/content-alchemist) repository. If you want the bot to have Twitter integration and posts to be automatically published there as well, you need to deploy this app. 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.13](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.8-green.svg)](https://fastapi.tiangolo.com/)
+[![Twitter API](https://img.shields.io/badge/Twitter%20API-v2-blue.svg)](https://developer.twitter.com/en/docs/twitter-api)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+
+
+This project is part of the [content-maestro](https://github.com/think-root/content-maestro) repository. If you want  to have Twitter integration and for posts to be automatically published there as well, you need to deploy this app
 
 
 ## Description
 
-This app provides a FastAPI-based server that integrates with the Twitter API to post tweets with optional media and URLs. It includes API key middleware for secure access and uses OAuth1 for authentication with the Twitter API.
+This app provides a FastAPI-based server that integrates with the Twitter API to post tweets, optionally including media and URLs. It includes API key middleware for secure access and uses OAuth1 for authentication with the Twitter API.
 
 ## Features
 
@@ -17,12 +24,7 @@ This app provides a FastAPI-based server that integrates with the Twitter API to
 
 ## Prerequisites
 
-- Python 3.7 or higher
-- FastAPI
-- Uvicorn
-- Requests
-- Requests-OAuthlib
-- Python-dotenv
+[requirements.txt](requirements.txt) includes all the dependencies needed to run this project.
 
 ## Setup
 
