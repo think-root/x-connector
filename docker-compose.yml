@@ -1,10 +1,10 @@
 services:
-  x_api:
-    container_name: x_api
+  x-connector:
+    container_name: x-connector
     restart: always
     ports:
       - "127.0.0.1:${SERVER_PORT}:${SERVER_PORT}"
-    image: x_api:latest
+    image: x-connector:latest
     build:
       context: .
       dockerfile: Dockerfile
