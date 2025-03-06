@@ -26,7 +26,7 @@ class TwitterClient:
             raise
 
     def split_text_into_parts(self, text: str) -> List[str]:
-        max_length = 250
+        max_length = 265
         if len(text) <= max_length:
             return [text]
         total_parts = math.ceil(len(text) / max_length)
