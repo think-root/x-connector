@@ -17,13 +17,32 @@ class TwitterClient:
         )
 
     async def make_twitter_request(self, url: str, data: dict, headers: dict):
-        try:
-            response = requests.post(url, json=data, auth=self.auth, headers=headers)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"Twitter API error: {e.response.text}")
-            raise
+        max_retries = 3
+        retry_delay = 30
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(url, json=data, auth=self.auth, headers=headers)
+                response.raise_for_status()
+                return response
+            except requests.exceptions.HTTPError as e:
+                logger.error(f"Twitter API error: {e.response.text}")
+                if attempt < max_retries - 1:
+                    logger.info(
+                        f"Retrying request in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Request error: {str(e)}")
+                if attempt < max_retries - 1:
+                    logger.info(
+                        f"Retrying request in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
 
     def split_text_into_parts(self, text: str) -> List[str]:
         max_length = 265
