@@ -32,6 +32,7 @@ class TwitterClient:
                         f"Retrying request in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
                     )
                     await asyncio.sleep(retry_delay)
+                    return None
                 else:
                     raise
             except requests.exceptions.RequestException as e:
@@ -41,10 +42,13 @@ class TwitterClient:
                         f"Retrying request in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
                     )
                     await asyncio.sleep(retry_delay)
+                    return None
                 else:
                     raise
+        return None
 
-    def split_text_into_parts(self, text: str) -> List[str]:
+    @staticmethod
+    def split_text_into_parts(text: str) -> List[str]:
         max_length = 265
         if len(text) <= max_length:
             return [text]
@@ -72,7 +76,6 @@ class TwitterClient:
         tweets_data = []
         text_parts = self.split_text_into_parts(text)
         total_parts = len(text_parts)
-        previous_tweet_id = None
 
         try:
             first_text = text_parts[0]
