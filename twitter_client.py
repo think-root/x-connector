@@ -80,7 +80,7 @@ class TwitterClient:
         try:
             first_text = text_parts[0]
             if total_parts > 1:
-                first_text = f"🧵 1/{total_parts} {first_text}"
+                first_text = f"🧵 0/{total_parts-1} {first_text}"
 
             if image_data:
                 logger.info("Uploading media to Twitter")
@@ -102,9 +102,9 @@ class TwitterClient:
             previous_tweet_id = response.json()["data"]["id"]
             tweets_data.append(response.json())
 
-            for i, part in enumerate(text_parts[1:], 2):
+            for i, part in enumerate(text_parts[1:], 1):
                 await asyncio.sleep(TWITTER_API["DELAY_BETWEEN_REQUESTS"])
-                text_with_counter = f"🧵 {i}/{total_parts} {part}"
+                text_with_counter = f"🧵 {i}/{total_parts-1} {part}"
                 reply_data = {
                     "text": text_with_counter,
                     "reply": {"in_reply_to_tweet_id": previous_tweet_id},
