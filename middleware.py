@@ -13,10 +13,5 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
                 status_code=401,
                 detail="Invalid or missing API key"
             )
-        return await call_next(request)
-
-        if api_key != SERVER_CONFIG["API_KEY"]:
-            return JSONResponse(status_code=403, content={"error": "Invalid API Key"})
-
         response = await call_next(request)
         return response
