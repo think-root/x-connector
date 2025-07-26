@@ -33,7 +33,7 @@ tenacity==9.0.0
 twikit==2.3.3
 typing_extensions==4.12.2
 tzlocal==5.2
-urllib3==2.3.0
+urllib3==2.5.0
 uvicorn==0.34.0
 uvloop==0.21.0
 watchfiles==1.0.4
