@@ -6,7 +6,6 @@ from config import TWITTER_AUTH, TWITTER_API
 from logger import logger
 import math
 
-
 class TwitterClient:
     def __init__(self):
         self.auth = OAuth1(
@@ -49,7 +48,7 @@ class TwitterClient:
 
     @staticmethod
     def split_text_into_parts(text: str) -> List[str]:
-        max_length = 265
+        max_length = TWITTER_API["MAX_TWEET_LENGTH"]
         if len(text) <= max_length:
             return [text]
         total_parts = math.ceil(len(text) / max_length)

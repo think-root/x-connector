@@ -18,6 +18,6 @@ SERVER_CONFIG = {
 TWITTER_API = {
     "TWEET_URL": "https://api.x.com/2/tweets",
     "MEDIA_UPLOAD_URL": "https://upload.twitter.com/1.1/media/upload.json",
-    "MAX_TWEET_LENGTH": 270,
+    "MAX_TWEET_LENGTH": int(os.getenv("MAX_TWEET_LENGTH", 265)),
     "DELAY_BETWEEN_REQUESTS": 5,
 }
