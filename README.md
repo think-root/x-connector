@@ -6,9 +6,7 @@
 [![Twitter API](https://img.shields.io/badge/Twitter%20API-v2-blue.svg)](https://developer.twitter.com/en/docs/twitter-api)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 
-
 This project is part of the [content-maestro](https://github.com/think-root/content-maestro) repository. If you want  to have Twitter integration and for posts to be automatically published there as well, you need to deploy this app
-
 
 ## Description
 
@@ -50,6 +48,7 @@ This app provides a FastAPI-based server that integrates with the Twitter API to
    ACCESS_TOKEN=your_twitter_access_token
    ACCESS_TOKEN_SECRET=your_twitter_access_token_secret
    SERVER_PORT=8080
+   MAX_TWEET_LENGTH=265
    ```
 
    Replace the placeholders with your actual keys and tokens.
