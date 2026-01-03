@@ -1,24 +1,10 @@
 # x
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.13](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.8-green.svg)](https://fastapi.tiangolo.com/)
-[![Twitter API](https://img.shields.io/badge/Twitter%20API-v2-blue.svg)](https://developer.twitter.com/en/docs/twitter-api)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-
-This project is part of the [content-maestro](https://github.com/think-root/content-maestro) repository. If you want  to have Twitter integration and for posts to be automatically published there as well, you need to deploy this app
+This project is part of the [content-maestro](https://github.com/think-root/content-maestro) repository. If you want Twitter integration and automatic publishing of posts there as well, you need to deploy this app.
 
 ## Description
 
-This app provides a FastAPI-based server that integrates with the Twitter API to post tweets, optionally including media and URLs. It includes API key middleware for secure access and uses OAuth1 for authentication with the Twitter API.
-
-## Features
-
-- Post tweets with text content.
-- Optionally attach media (images) to tweets.
-- Optionally include a URL in the tweet as a reply.
-- Secure API access using API key middleware.
-- Logging for request and response tracking.
+This app provides a FastAPI-based server that integrates with the Twitter API to post tweets, optionally including media and URLs. It includes API key middleware for secure access and uses OAuth 1.0a for authentication with the Twitter API.
 
 ## Prerequisites
 
@@ -27,11 +13,6 @@ This app provides a FastAPI-based server that integrates with the Twitter API to
 ## Setup
 
 1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/think-root/x-connector.git
-   cd x
-   ```
 
 2. **Install dependencies:**
 
@@ -51,7 +32,7 @@ This app provides a FastAPI-based server that integrates with the Twitter API to
    MAX_TWEET_LENGTH=265
    ```
 
-   Replace the placeholders with your actual keys and tokens.
+   Replace the placeholders with your actual data.
 
 4. **Run the server:**
 
@@ -61,19 +42,173 @@ This app provides a FastAPI-based server that integrates with the Twitter API to
 
    The server will start on `http://127.0.0.1:8080`.
 
-## API Endpoints
+## API
 
-- **POST `/x/api/posts/create`**: Create a new tweet.
-  - **Parameters**:
-    - `text` (required): The text content of the tweet.
-    - `url` (optional): A URL to include as a reply to the tweet.
-    - `image` (optional): An image file to attach to the tweet.
-  - **Headers**:
-    - `X-API-Key`: Your server API key.
+All endpoints require the `X-API-Key` header for authentication.
 
-## Logging
+### Authentication
 
-The application logs important events and errors to the console. Logs include timestamps, log levels, and messages.
+| Header | Type | Required | Description |
+|--------|------|----------|-------------|
+| `X-API-Key` | string | Yes | Your server API key from `.env` |
+
+**Error Response (401 Unauthorized):**
+
+```json
+{
+  "detail": "Invalid or missing API key"
+}
+```
+
+---
+
+### POST `/x/api/posts/create`
+
+Creates a new tweet. Supports text, optional image attachment, and optional URL reply. Long texts are automatically split into a thread.
+
+#### Request
+
+**Content-Type:** `multipart/form-data`
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `text` | string | Yes | The text content of the tweet. If exceeds `MAX_TWEET_LENGTH`, will be split into a thread |
+| `url` | string | No | A URL to include as a final reply to the tweet/thread |
+| `image` | file | No | An image file to attach to the first tweet |
+
+#### Examples
+
+**Simple tweet:**
+
+```bash
+curl -X POST "http://localhost:8080/x/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Hello, World!"
+```
+
+**Tweet with image:**
+
+```bash
+curl -X POST "http://localhost:8080/x/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Check out this image!" \
+  -F "image=@/path/to/image.jpg"
+```
+
+**Tweet with URL reply:**
+
+```bash
+curl -X POST "http://localhost:8080/x/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Interesting article about AI" \
+  -F "url=https://example.com/article"
+```
+
+**Full request (text + image + URL):**
+
+```bash
+curl -X POST "http://localhost:8080/x/api/posts/create" \
+  -H "X-API-Key: your_api_key" \
+  -F "text=Check out this amazing article!" \
+  -F "url=https://example.com/article" \
+  -F "image=@/path/to/image.jpg"
+```
+
+#### Response
+
+**Success (200 OK):**
+
+```json
+{
+  "tweets": [
+    {
+      "data": {
+        "id": "1234567890123456789",
+        "text": "Hello, World!"
+      }
+    }
+  ]
+}
+```
+
+**Success with thread (long text split into multiple tweets):**
+
+```json
+{
+  "tweets": [
+    {
+      "data": {
+        "id": "1234567890123456789",
+        "text": "🧵 0/2 First part of the long text..."
+      }
+    },
+    {
+      "data": {
+        "id": "1234567890123456790",
+        "text": "🧵 1/2 Second part of the text..."
+      }
+    },
+    {
+      "data": {
+        "id": "1234567890123456791",
+        "text": "🧵 2/2 Final part of the text..."
+      }
+    }
+  ]
+}
+```
+
+**Error:**
+
+```json
+{
+  "error": "Error message describing what went wrong"
+}
+```
+
+---
+
+### POST `/x/api/test/posts/create`
+
+Creates a test tweet with the text "test". Used for verifying API connectivity and authentication.
+
+#### Request
+
+No parameters required.
+
+```bash
+curl -X POST "http://localhost:8080/x/api/test/posts/create" \
+  -H "X-API-Key: your_api_key"
+```
+
+#### Response
+
+**Success (200 OK):**
+
+```json
+{
+  "tweets": [
+    {
+      "data": {
+        "id": "1234567890123456789",
+        "text": "test"
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Thread Behavior
+
+When the tweet text exceeds `MAX_TWEET_LENGTH` (default: 265 characters), the API automatically:
+
+1. Splits the text into multiple parts at word boundaries
+2. Adds thread counters (e.g., `🧵 0/2`, `🧵 1/2`, `🧵 2/2`)
+3. Posts each part as a reply to the previous tweet
+4. Attaches the image (if provided) only to the first tweet
+5. Adds the URL (if provided) as the final reply in the thread
 
 ## License
 
