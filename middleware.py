@@ -9,9 +9,6 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         self.api_key = api_key
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in ["/x", "/x/"]:
-            return await call_next(request)
-
         if request.headers.get("X-API-Key") != self.api_key:
             return JSONResponse(
                 status_code=401,
