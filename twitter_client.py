@@ -31,7 +31,6 @@ class TwitterClient:
                         f"Retrying request in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
                     )
                     await asyncio.sleep(retry_delay)
-                    return None
                 else:
                     raise
             except requests.exceptions.RequestException as e:
@@ -41,7 +40,6 @@ class TwitterClient:
                         f"Retrying request in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
                     )
                     await asyncio.sleep(retry_delay)
-                    return None
                 else:
                     raise
         return None
